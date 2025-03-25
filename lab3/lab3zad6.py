@@ -17,3 +17,7 @@ t = np.linspace(0, tmax, N)
 Xf = np.fft.fft(flute)
 Xk = np.fft.fft(korg)
 freq = np.fft.fftfreq(N, d=1/fs)
+
+sum = flute + korg
+
+Xsum = np.fft.fft(sum)
