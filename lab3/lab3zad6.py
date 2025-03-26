@@ -48,11 +48,16 @@ plt.ylabel('Amplituda')
 plt.show()
 
 cutoff_freq = 700
+mask = np.abs(freq_sum) < cutoff_freq
+Xsum[mask] *= 0.001
 
-Xsum[np.abs(freq_sum) < cutoff_freq] = 0
-filtered_signal = np.fft.ifft(Xsum).real
-filtered_signal = filtered_signal / np.max(np.abs(filtered_signal))
+filtered_signal = np.fft.ifft(Xsum)
+filtered_signal = filtered_signal.real
+filtered_signal = filtered_signal
 filtered_signal = (filtered_signal * 32767).astype(np.int16)
 plt.plot(freq_sum, np.abs(Xsum))
+plt.title('Widmo DFT - usunięcie (-700;700)Hz')
+plt.xlabel('Częstotliwość [Hz]')
+plt.ylabel('Amplituda')
 plt.show()
 wav.write('sum.wav', fs, filtered_signal)
