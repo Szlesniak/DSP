@@ -13,8 +13,8 @@ Rp = 3
 Rs = 100
 
 # Wybór filtra prototypowego (tylko jeden aktywny na raz)
-z, p, k = signal.buttap(N)           # Butterworth
-# z, p, k = signal.cheb1ap(N, Rp)    # Chebyshev typu I
+# z, p, k = signal.buttap(N)           # Butterworth
+z, p, k = signal.cheb1ap(N, Rp)    # Chebyshev typu I
 # z, p, k = signal.cheb2ap(N, Rs)    # Chebyshev typu II
 # z, p, k = signal.ellipap(N, Rp, Rs) # Eliptyczny (Cauer)
 
@@ -54,8 +54,8 @@ plt.show()
 # === Transformacja częstotliwości ===
 # Odkomentuj jedną linię w zależności od typu filtra docelowego
 
-b, a = signal.lp2lp(b, a, 2*np.pi*f0)        # LP → LP
-# b, a = signal.lp2hp(b, a, 2*np.pi*f0)      # LP → HP
+# b, a = signal.lp2lp(b, a, 2*np.pi*f0)        # LP → LP
+b, a = signal.lp2hp(b, a, 2*np.pi*f0)      # LP → HP
 # b, a = signal.lp2bp(b, a, 2*np.pi*np.sqrt(f1*f2), 2*np.pi*(f2-f1))  # LP → BP
 # b, a = signal.lp2bs(b, a, 2*np.pi*np.sqrt(f1*f2), 2*np.pi*(f2-f1))  # LP → BS
 
