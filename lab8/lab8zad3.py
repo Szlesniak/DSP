@@ -3,6 +3,7 @@ import scipy.signal as signal
 import scipy.io.wavfile as wav
 import sounddevice as sd
 from scipy.interpolate import interp1d
+from scipy.signal import get_window
 
 
 def resample_signal(x, fs_in, fs_out):
@@ -49,6 +50,89 @@ def resample_sinc(x, fs_in, fs_out, duration, L=100):
 
     return h @ x  # splot macierzowy (każdy punkt t_out jako suma ważona próbek wejściowych)
 
+
+def sinc_interp(x, fs_in, fs_out, window='blackman', num_taps=64):
+    """
+    Zmiana częstotliwości próbkowania sygnału x z fs_in do fs_out
+    przy użyciu interpolacji sinc z oknem.
+
+    Parametry:
+    - x: sygnał wejściowy (1D numpy array)
+    - fs_in: oryginalna częstotliwość próbkowania
+    - fs_out: docelowa częstotliwość próbkowania
+    - window: typ okna (np. 'blackman')
+    - num_taps: liczba współczynników filtru
+
+    Zwraca:
+    - x_resampled: sygnał po zmianie częstotliwości próbkowania
+    """
+    # Obliczenie współczynnika zmiany częstotliwości
+    ratio = fs_out / fs_in
+    n = np.arange(-num_taps // 2, num_taps // 2 + 1)
+    sinc_func = np.sinc(n / ratio)
+
+    # Zastosowanie okna
+    window_vals = get_window(window, num_taps + 1)
+    kernel = sinc_func * window_vals
+    kernel /= np.sum(kernel)
+
+    # Obliczenie liczby próbek w sygnale wyjściowym
+    num_output_samples = int(len(x) * ratio)
+
+    # Interpolacja
+    x_resampled = np.zeros(num_output_samples)
+    for i in range(num_output_samples):
+        t = i / ratio
+        left = int(np.floor(t)) - num_taps // 2
+        right = left + num_taps + 1
+        x_segment = x[max(left, 0):min(right, len(x))]
+        k_left = max(0, -left)
+        k_right = k_left + len(x_segment)
+        x_resampled[i] = np.dot(x_segment, kernel[k_left:k_right])
+    return x_resampled
+
+
+def sinc_interp(x, fs_in, fs_out, window='blackman', num_taps=64):
+    """
+    Zmiana częstotliwości próbkowania sygnału x z fs_in do fs_out
+    przy użyciu interpolacji sinc z oknem.
+
+    Parametry:
+    - x: sygnał wejściowy (1D numpy array)
+    - fs_in: oryginalna częstotliwość próbkowania
+    - fs_out: docelowa częstotliwość próbkowania
+    - window: typ okna (np. 'blackman')
+    - num_taps: liczba współczynników filtru
+
+    Zwraca:
+    - x_resampled: sygnał po zmianie częstotliwości próbkowania
+    """
+    # Obliczenie współczynnika zmiany częstotliwości
+    ratio = fs_out / fs_in
+    n = np.arange(-num_taps // 2, num_taps // 2 + 1)
+    sinc_func = np.sinc(n / ratio)
+
+    # Zastosowanie okna
+    window_vals = get_window(window, num_taps + 1)
+    kernel = sinc_func * window_vals
+    kernel /= np.sum(kernel)
+
+    # Obliczenie liczby próbek w sygnale wyjściowym
+    num_output_samples = int(len(x) * ratio)
+
+    # Interpolacja
+    x_resampled = np.zeros(num_output_samples)
+    for i in range(num_output_samples):
+        t = i / ratio
+        left = int(np.floor(t)) - num_taps // 2
+        right = left + num_taps + 1
+        x_segment = x[max(left, 0):min(right, len(x))]
+        k_left = max(0, -left)
+        k_right = k_left + len(x_segment)
+        x_resampled[i] = np.dot(x_segment, kernel[k_left:k_right])
+    return x_resampled
+
+
 # Wczytaj pliki
 fs1, x1 = wav.read("x1.wav")
 fs2, x2 = wav.read("x2.wav")
@@ -74,15 +158,16 @@ x1_resampled = x1_resampled[:min_len]
 x2_resampled = x2_resampled[:min_len]
 
 # Miksowanie (sumowanie z normalizacją)
-x4 = x1_resampled + x2_resampled
-x4 = x4 / np.max(np.abs(x4))  # Normalizacja
+x4_mix = x1_resampled + x2_resampled
+x4_mix = x4_mix / np.max(np.abs(x4_mix))  # Normalizacja
+x4_mix = x4_mix * 0.01
 
 # Zapisz do pliku WAV
-wav.write("x4.wav", fs_target, (x4 * 32767).astype(np.int16))
+wav.write("x4.wav", fs_target, (x4_mix * 32767//32).astype(np.int16))
 
 # Odtwarzanie do odsłuchu
 print("Odtwarzanie zmiksowanego sygnału...")
-sd.play(x4, fs_target)
+sd.play(x4_mix, fs_target)
 sd.wait()
 
 
@@ -114,6 +199,10 @@ x2_lin = resample_signal(x2, fs2, fs_target)
 x1_sinc = resample_signal(x1, fs1, fs_target)
 x2_sinc = resample_signal(x2, fs2, fs_target)
 
+x1_soxr = sinc_interp(x1,fs1,fs_target)
+x2_soxr = sinc_interp(x2,fs2,fs_target)
+
+
 # Ucięcie do wspólnej długości (wszystkie powinny mieć tę samą długość 48000)
 min_len = min(len(x1_resampled), len(x2_resampled), len(x3))
 x1_resampled = x1_resampled[:min_len]
@@ -126,28 +215,43 @@ x2_lin = x2_lin[:min_len]
 x1_sinc = x1_sinc[:min_len]
 x2_sinc = x2_sinc[:min_len]
 
+x1_soxr = x1_soxr[:min_len]
+x2_soxr = x2_soxr[:min_len]
+
 # Sumowanie i normalizacja
 x4 = x1_resampled + x2_resampled + x3
 x4 = x4 / np.max(np.abs(x4))  # Normalizacja
+x4 = 0.01 * x4
 
 x4_lin = x1_lin + x2_lin + x3
 x4_lin = x4_lin/np.max(np.abs(x4_lin))
+x4_lin = 0.01 * x4_lin
 
 x4_sinc = x1_sinc + x2_sinc + x3
 x4_sinc = x4_sinc/np.max(np.abs(x4_sinc))
+x4_sinc = x4_sinc * 0.01
+
+x4_soxr = x1_soxr + x2_soxr + x3
+x4_soxr = x4_soxr/np.max(np.abs(x4_soxr))
+x4_soxr = x4_soxr * 0.01
 
 # Zapis do WAV i odtwarzanie
-wav.write("x4_synt.wav", fs_target, (x4 * 32767//4).astype(np.int16))
+wav.write("x4_synt.wav", fs_target, (x4 * 32767//32).astype(np.int16))
 print("Odtwarzanie zmiksowanego sygnału syntetycznego...")
 sd.play(x4, fs_target)
 sd.wait()
 
-wav.write("x4_lin.wav", fs_target, (x4_lin * 32767//4).astype(np.int16))
+wav.write("x4_lin.wav", fs_target, (x4_lin * 32767//32).astype(np.int16))
 print("Odtwarzanie zmiksowanego sygnału syntetycznego(lin)...")
 sd.play(x4_lin, fs_target)
 sd.wait()
 
-wav.write("x4_sinc.wav", fs_target, (x4_sinc * 32767//4).astype(np.int16))
+wav.write("x4_sinc.wav", fs_target, (x4_sinc * 32767//32).astype(np.int16))
 print("Odtwarzanie zmiksowanego sygnału syntetycznego(sinc)...")
+sd.play(x4_sinc, fs_target)
+sd.wait()
+
+wav.write("x4_sinc_interp.wav", fs_target, (x4_soxr * 32767//32).astype(np.int16))
+print("Odtwarzanie zmiksowanego sygnału syntetycznego(soxr)...")
 sd.play(x4_sinc, fs_target)
 sd.wait()
