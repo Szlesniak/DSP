@@ -99,6 +99,21 @@ function plot_spectrum(signal, fs)
     grid on;
 end
 
+% % Skala logarytmiczna
+% function plot_spectrum(signal, fs)
+%     N = length(signal);
+%     f = (0:N-1)*fs/N;
+%     spectrum = abs(fft(signal))/N;
+% 
+%     % Unikamy log(0), dodając bardzo małą wartość
+%     spectrum_dB = 20*log10(spectrum + 1e-12);
+% 
+%     plot(f(1:N/2), spectrum_dB(1:N/2));
+%     xlabel('Częstotliwość [Hz]');
+%     ylabel('Amplituda [dB]');
+%     grid on;
+% end
+
 %% Demodulacja sygnałów
 
 % Funkcja demodulacji z wykorzystaniem filtra Hilberta
@@ -144,7 +159,7 @@ function demod_signal = demodulate_AM(signal, fc, fs, fsx, mode)
             end
             
             % Filtr dolnoprzepustowy
-            [b,a] = butter(6, fc/fs);
+            [b,a] = butter(6, fsx / (fs/2));
             demod_signal = filtfilt(b, a, demod_signal);
     end
     
@@ -174,12 +189,12 @@ x2_SSB_SC = flipud(x2_SSB_SC); % Odwrócenie sygnału
 %% Odtworzenie sygnałów dźwiękowych
 fprintf('Odtwarzanie zdekodowanych sygnałów...\n');
 
-% DSB-SC
-fprintf('\nDSB-SC - Stacja 1:\n');
+% DSB-C
+fprintf('\nDSB-C - Stacja 1:\n');
 sound(x1_DSB_C, fsx);
 pause(length(x1_DSB_C)/fsx + 1);
 
-fprintf('DSB-SC - Stacja 2 (odwrócony):\n');
+fprintf('DSB-C - Stacja 2 (odwrócony):\n');
 sound(x2_DSB_C, fsx);
 pause(length(x2_DSB_C)/fsx + 1);
 
@@ -199,7 +214,7 @@ pause(length(x1_SSB_SC)/fsx + 1);
 
 fprintf('SSB-SC - Stacja 2 (LSB, odwrócony):\n');
 sound(x2_SSB_SC, fsx);
-pause(length(x1_SSB_SC)/fsx + 1);
+pause(length(x2_SSB_SC)/fsx +1);
 
 
 %% Ocena jakości transmisji - współczynnik SNR
@@ -254,14 +269,18 @@ title(['SSB-SC Stacja 2 (LSB), SNR = ' num2str(snr_results(6)) ' dB']);
 legend('Oryginał', 'Odtworzony');
 
 
-% SSB-SC: dwie stacje na jednej nośnej (fc1)
-x1_SSB_SC_fc1 = demodulate_AM(y_SSB_SC, fc1, fs, fsx, 'SSB-USB');
-x2_SSB_SC_fc1 = demodulate_AM(y_SSB_SC, fc1, fs, fsx, 'SSB-LSB');
-x2_SSB_SC_fc1 = flipud(x2_SSB_SC_fc1); % Odwrócenie sygnału
+%% SSB-SC dwie stacje na jednej nośnej
 
-fprintf('Odtwarzanie stacji 1 (USB na fc1):\n');
-sound(x1_SSB_SC_fc1, fsx);
-pause(length(x1_SSB_SC_fc1)/fsx + 1);
+% Demodulacja
+x1_SSB_SC = demodulate_AM(y_SSB_SC, fc1, fs, fsx, 'SSB-USB');
+x2_SSB_SC = demodulate_AM(y_SSB_SC, fc1, fs, fsx, 'SSB-LSB');
+x2_SSB_SC = flipud(x2_SSB_SC); % Odwrócenie sygnału
 
-fprintf('Odtwarzanie stacji 2 (LSB na fc1, odwrócony):\n');
-sound(x2_SSB_SC_fc1, fsx);
+% Odtworzenie dźwięku
+fprintf('Odtwarzanie stacji 1 (USB):\n');
+sound(x1_SSB_SC, fsx);
+pause(length(x1_SSB_SC)/fsx + 1);
+
+fprintf('Odtwarzanie stacji 2 (LSB, odwrócony):\n');
+sound(x2_SSB_SC, fsx);
+pause(length(x2_SSB_SC)/fsx + 1);
