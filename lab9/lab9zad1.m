@@ -45,8 +45,8 @@ h = zeros(M,1);
             h = h + mi * e(n) * bx; % LMS
         end
     end
-    
-
+error = dref' - y;   
+SNRdB = 10*log10(mean(dref.^2)/mean(error.^2)),
 %% 3. Sygnał SFM
 fc = 1000; delta_f = 5; fm = 0.25;
 beta = delta_f/fm;
