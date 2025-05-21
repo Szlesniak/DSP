@@ -17,12 +17,12 @@ for i = 1:3
 end
 
 %% 2. Dobór parametrów filtru (M i mi)
-M = 4;          % Długość filtra
+M = 8;          % Długość filtra
 mi = 0.1;      % Współczynnik szybkości adaptacji (NLMS)
-use_NLMS = false; % Wybór algorytmu NLMS
+use_NLMS = true; % Wybór algorytmu NLMS
 
 % Testowanie dla różnych poziomów szumu
-SNRdB_results = zeros(1,3);
+
 d = d_noisy{1};
 x = [d(1), d(1:end-1)];
     
@@ -74,6 +74,7 @@ end
 % Obliczanie SNRdB dla SFM
 error_sfm = dref_sfm - y_sfm;
 SNRdB_sfm = 10*log10(mean(dref_sfm.^2)/mean(error_sfm.^2));
+SNRdB_sfm,
 
 %% 4. Sygnał mowy
 [mowa, fs_mowa] = audioread('mowa8000.wav');
@@ -105,13 +106,13 @@ end
 y_mowa = y_mowa(:);                    % Konwersja na kolumnę
 error_mowa = mowa(1:length(y_mowa)) - y_mowa;
 SNRdB_mowa = 10*log10(mean(mowa.^2)/mean(error_mowa.^2));
-
+SNRdB_mowa,
 %% Wykresy
 % Dla sygnału harmonicznego
 figure;
 subplot(2,1,1);
-plot(t, dref, 'b', t, d_noisy{1}, 'r', t, y, 'g');
-legend('Oryginał', 'Zaszumiony', 'Odszumiony');
+plot(t, d_noisy{1},'r', t, dref, 'b', t, y, 'g');
+legend('Zaszumiony','Oryginał' , 'Odszumiony');
 title('Porównanie sygnałów harmonicznych');
 xlabel('Czas [s]'); ylabel('Amplituda');
 
@@ -148,6 +149,7 @@ subplot(2,1,2);
 plot(f_mowa, 20*log10(abs(H_mowa)));
 title('Charakterystyka amplitudowa filtru (mowa)');
 xlabel('Częstotliwość [Hz]'); ylabel('Amplituda [dB]');
+
 
 %% Funkcja pomocnicza do obliczania SNR
 function snr = calculate_SNR(original, denoised)
