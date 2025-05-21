@@ -1,9 +1,4 @@
-% ############################################
-% RADIO FM: DEKODER - przyklad
-% Dekoder RDS wedlug standardu IEC 62106
-% Program fm_dekoder_stereo.m - wersja rozszerzona
-% Autor: Tomasz ZIELINSKI, tzielin@agh.edu.pl
-% Modyfikacje: [Twoje imię]
+
 
 clear all; close all;
 
