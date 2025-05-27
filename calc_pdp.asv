@@ -1,0 +1,6 @@
+Ts=2.6e-7;% czas symbolu tu bez znaczenia ale bez niego model się nie wygeneruje ;p
+Fd=10; % maksymalna częstotliwość widma dopplerowskiego
+[c,p]=stdchan('cdmaTUx',1/Ts,Fd);
+%p.AvgPathGaindB - wektor zawierający poziomy mocy komponentów zanikowych w dB
+%p.PathDelays - wektor zawierający opóźnienia poszczególnych komponentów w sekundach
+%a resztę trzeba obliczyć samodzielnie.....
